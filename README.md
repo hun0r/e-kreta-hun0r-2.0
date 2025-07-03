@@ -50,7 +50,7 @@ Reccomended to use `session.invalidate()` if the refresh token wont be saved as 
 
 `sessiion.refresh()` refreshes the access token. Usually not required as it done automatically when needed.
 
-Important is that for the `institute_code` parameter the second code of the school is needed. 
+Important is that for the `institute_code` parameter the first code of the school is needed. 
 check your schools id [here](https://intezmenykereso.e-kreta.hu/)
 
 ![login_code](https://github.com/hun0r/e-kreta-hun0r-2.0/blob/main/image/README/login_code.png?raw=true)
@@ -113,7 +113,7 @@ Ajánlott `session.invalidate()` használata ha a refresh_token-t nem mentjük e
 
 `sessiion.refresh()` frissíti az tokeneket. Külön kiírni szügségtelen mert automatikusan frissítjük.
 
-Fontos hogy az `institute_code` paraméter az iskola második kódját hasznája. 
+Fontos hogy az `institute_code` paraméter az iskola első kódját hasznája. 
 Az iskolád kódját [itt](https://intezmenykereso.e-kreta.hu/) keresheted meg.
 
 ![login_code](https://github.com/hun0r/e-kreta-hun0r-2.0/blob/main/image/README/login_code.png?raw=true)
