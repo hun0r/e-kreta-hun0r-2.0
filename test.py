@@ -5,9 +5,9 @@ from src.kreta.idp import Auth_Session
 
 username = os.getenv("username")
 pwd = os.getenv("pwd")
-institiute_code = os.getenv("institute_code")
+institute_code = os.getenv("institute_code")
 
-with Auth_Session.login(username, pwd, institiute_code) as session:
+with Auth_Session.login(username, pwd, institute_code) as session:
     response = endpoints.get_notes(session)
     print(response)
 
