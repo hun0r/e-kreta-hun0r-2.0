@@ -7,7 +7,7 @@ packages = ["src/kreta"]
 
 [project]
 name = "e-kreta-hun0r"
-version = "2.0.13"
+version = "2.1.0"
 authors = [
   { name="hun0r", email="kiskukac1024@gmail.com" },
 ]
