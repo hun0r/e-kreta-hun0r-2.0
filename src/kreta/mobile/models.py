@@ -282,7 +282,7 @@ class Student(BaseModel):
     yearOfBirth: Optional[int] = Field(alias="SzuletesiEv", frozen=True)
     @computed_field
     @property
-    def date(self) -> date:
+    def dateOfBirth(self) -> date:
         return date(self.year, self.month, self.day)
 
 
