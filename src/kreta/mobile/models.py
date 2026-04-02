@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from ..models import SubjectDescriptor, UidNameStructure, UidStructure, ValueDescriptor
 
@@ -280,6 +280,10 @@ class Student(BaseModel):
     schoolYearUID: Optional[float] = Field(alias="TanevUid", frozen=True)
     uid: Optional[str] = Field(alias="Uid", frozen=True)
     yearOfBirth: Optional[int] = Field(alias="SzuletesiEv", frozen=True)
+    @computed_field
+    @property
+    def date(self) -> date:
+        return date(self.year, self.month, self.day)
 
 
 class BankAccount(BaseModel):
