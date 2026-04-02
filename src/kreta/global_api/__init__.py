@@ -1,3 +1,4 @@
-from . import endpoints, models
+from . import models
+from .endpoints import Global
 
-__all__ = ["endpoints", "models"]
+__all__ = ["Global", "models"]

@@ -1,3 +1,4 @@
-from . import endpoints, models
+from . import models
+from .endpoints import EAdmin
 
-__all__ = ["endpoints", "models"]
+__all__ = ["EAdmin", "models"]

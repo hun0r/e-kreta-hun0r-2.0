@@ -1,42 +1,75 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Literal, Type, TypeVar, get_args, get_origin
-
-from requests import Response
+from typing import TYPE_CHECKING, Any, Literal, Optional, Type, TypeVar, get_args, get_origin, overload
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
-    from ..idp.auth_session import Auth_Session
+    from ..idp.auth_session_protocol import Auth_Session_Protocol
 
 T = TypeVar("T")
+class Router:
+    BASE_URL = ""
+    def __init__(self, session: Auth_Session_Protocol):
+        self.session = session
+    @overload
+    def request(
+        self,
+        url: str,
+        method: Literal[
+            "CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"
+        ],
+        params: Optional[dict[str, str]] = None,
+        data: Optional[dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
+    ) -> None:...
+    @overload
+    def request(
+        self,
+        url: str,
+        method: Literal[
+            "CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"
+        ],
+        model: Optional[Type[T]] = None,
+        params: Optional[dict[str, str]] = None,
+        data: Optional[dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
+    ) -> T:...
+    def request(
+        self,
+        url: str,
+        method: Literal[
+            "CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"
+        ],
+        model: Optional[Type[T]] = None,
+        params: Optional[dict[str, str]] = None,
+        data: Optional[dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
+    ) -> T:
+        full_url = self.BASE_URL + url
+        return self.session.request(method, full_url, model = model, params=params, data=data, headers=headers)
 
 
-def request_category(
-    url_start: str,
-    session: Auth_Session,
-    method: Literal["GET", "DELETE", "POST", "PUT"],
-    url: str,
-    *args,
-    model: Type[T] = Response,
-    **kwargs,
+def validate(
+    data: dict,
+    model: Optional[Type[T]] = None,
 ) -> T:
-    url = url_start + url
+    if model is None:
+        return None
 
-    r = session.request(method, url, *args, **kwargs)
-
-    if model is Response:
-        return r
-
-    data = r.json()
+    if issubclass(model, BaseModel):
+        return model.model_validate(data)
+    
+    if model is dict:
+        return data
 
     origin = get_origin(model)
     if origin is list:
         inner_model: BaseModel = get_args(model)[0]
         return [inner_model.model_validate(item) for item in data]
 
-    return model(data)
+    raise ValueError(f"Unsupported model: {model}")
 
 
 def filter_params(**kwargs) -> dict[str, Any]:

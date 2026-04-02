@@ -1,8 +1,10 @@
+from kreta.idp.auth_session_protocol import Auth_Session_Protocol
+from kreta.idp.endpoints import revoke_refresh_token
+
 from datetime import datetime, timezone
 from typing import Optional
 
 import jwt
-import requests
 from pydantic import BaseModel, Field
 
 
@@ -171,7 +173,10 @@ class Auth_Token:
     def is_expired(self) -> bool:
         return self.body.is_expired()
 
-    def refresh(self) -> None:
+    def refresh(
+        self,
+        session: Auth_Session_Protocol,
+    ) -> None:
         data = {
             "institute_code": self.body.kreta_institute_code,
             "refresh_token": self.refresh_token,
@@ -179,18 +184,20 @@ class Auth_Token:
             "client_id": self.body.client_id,
         }
         self.__init__(
-            **requests.request(
-                "POST", "https://idp.e-kreta.hu/connect/token", data=data
-            ).json(),
+            session.request(
+                "POST", "https://idp.e-kreta.hu/connect/token", 
+                data=data,
+                model=dict
+            )
         )
 
-    def revoke_refresh_token(self) -> None:
+    def revoke_refresh_token(self, session: Auth_Session_Protocol) -> None:
         """Invalidate refresh token and delete data"""
         data = {
             "token": self.refresh_token,
             "client_id": self.body.client_id,
         }
-        requests.request(
+        session.request(
             "POST",
             "https://idp.e-kreta.hu/connect/revocation",
             data=data,

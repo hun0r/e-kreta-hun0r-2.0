@@ -1,12 +1,15 @@
-from typing import Literal, Self
+from typing import Awaitable, Literal, Optional, Self, Type, TypeVar
 
 import requests
+
+from kreta.idp.auth_session_protocol import Sync_Auth_Session_Protocol
+from ..utils.utils import validate
 
 from .login import login
 from .auth_token import Auth_Token
 
-
-class Auth_Session(requests.Session):
+T = TypeVar("T")
+class Sync_Auth_Session(requests.Session, Sync_Auth_Session_Protocol):
     def __init__(self, token: Auth_Token, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.token = token
@@ -18,24 +21,23 @@ class Auth_Session(requests.Session):
             },
         )
 
-    def __enter__(self) -> Self:
-        return super().__enter__()
-
-    def __exit__(self, *args, **kwargs) -> None:
-        super().__exit__(*args, **kwargs)
+    def __exit__(
+        self,
+        *args,
+        **kwargs
+    ) -> None:
+        self.close()
 
     def close(self) -> None:
-        try:
-            super().close()
-            self.invalidate()
-        except Exception:
-            pass
+        self.invalidate()
         super().close()
 
     def invalidate(self) -> None:
-        self.token.revoke_refresh_token()
-        self.token = None
-        self.headers.pop("Authorization")
+        if self.token is not None:
+            self.token.revoke_refresh_token(self)
+            self.token = None
+        if "Authorization" in self.headers:
+            self.headers.pop("Authorization")
 
     @classmethod
     def login(cls, username: str, password: str, institute_code: str) -> Self:
@@ -49,9 +51,11 @@ class Auth_Session(requests.Session):
             "CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"
         ],
         url: str,
-        *args,
-        **kwargs
-    ) -> requests.Response:
+        model: Optional[Type[T]] = None,
+        params: Optional[dict[str, str]] = None,
+        data: Optional[dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
+    ) -> Awaitable[T|None]:
         # fill the institute code in the url
         if "{institute_code}" in url:
             url = url.format(institute_code=self.token.body.kreta_institute_code)
@@ -60,28 +64,13 @@ class Auth_Session(requests.Session):
             self.token.refresh()
             self.headers.update({"Authorization": str(self.token)})
         # make request
-        response = super().request(method, url, *args, **kwargs)
-        # raise errors with the messages sent by kreta
-        try:
+        with super().request(method, url, params=params, data=data, headers=headers) as response:
+            # raise errors with the messages sent by kreta
             response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            if (
-                response.headers.get("Content-Type", "")
-                .lower()
-                .startswith("application/json")
-            ):
-                json: dict = response.json()
-                e.add_note(
-                    json.get("Message", json.get("error", "unknown error")),
-                )
-            else:
-                e.add_note(
-                    response.text,
-                )
-            raise e
+            obj = validate(response.json())
 
-        return response
+        return obj
 
     def refresh(self) -> None:
-        self.token.refresh()
+        self.token.refresh(self)
         self.headers.update({"Authorization": str(self.token)})
